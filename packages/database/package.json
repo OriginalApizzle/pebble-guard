@@ -1,0 +1,23 @@
+{
+  "name": "@pebble-guard/database",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "generate": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.6.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.6.0",
+    "typescript": "^5.3.2"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

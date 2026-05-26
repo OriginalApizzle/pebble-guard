@@ -1,0 +1,561 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// ========================
+// GUILD CONFIGURATION
+// ========================
+model Guild {
+  id                    String   @id // Discord guild ID
+  name                  String
+  iconUrl               String?
+  ownerId               String
+  prefix                String   @default("!")
+  locale                String   @default("en-US")
+  joinedAt              DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Module toggles
+  modEnabled            Boolean  @default(true)
+  loggingEnabled        Boolean  @default(true)
+  verificationEnabled   Boolean  @default(false)
+  ticketsEnabled        Boolean  @default(true)
+  automodEnabled        Boolean  @default(false)
+  welcomeEnabled        Boolean  @default(false)
+  analyticsEnabled      Boolean  @default(true)
+
+  // Channel IDs
+  modLogChannelId       String?
+  msgLogChannelId       String?
+  joinLeaveChannelId    String?
+  welcomeChannelId      String?
+  verificationChannelId String?
+  ticketCategoryId      String?
+  staffCategoryId       String?
+  boostLogChannelId     String?
+  voiceLogChannelId     String?
+
+  // Role IDs
+  mutedRoleId           String?
+  verifiedRoleId        String?
+  unverifiedRoleId      String?
+  staffRoleId           String?
+  modRoleId             String?
+  adminRoleId           String?
+
+  // Welcome messages
+  welcomeMessage        String?
+  leaveMessage          String?
+  welcomeEmbed          Boolean  @default(false)
+
+  // Verification settings
+  verificationMethod    VerificationMethod @default(BUTTON)
+  verificationMessage   String?
+  minAccountAge         Int      @default(0) // days
+  captchaEnabled        Boolean  @default(false)
+
+  // Anti-raid settings
+  raidMode              Boolean  @default(false)
+  raidModeThreshold     Int      @default(10)
+  raidModeInterval      Int      @default(10) // seconds
+  antiAltEnabled        Boolean  @default(false)
+  minAltAge             Int      @default(7) // days
+
+  // Automod settings
+  linkFilterEnabled     Boolean  @default(false)
+  linkWhitelist         String[] @default([])
+  spamThreshold         Int      @default(5)
+  spamInterval          Int      @default(5) // seconds
+  massMentionLimit      Int      @default(5)
+  wordBlacklist         String[] @default([])
+  inviteFilterEnabled   Boolean  @default(false)
+  capsFilterEnabled     Boolean  @default(false)
+  capsThreshold         Int      @default(70) // percent
+
+  // Escalation
+  escalationEnabled     Boolean  @default(false)
+  escalationWarnLimit   Int      @default(3)
+  escalationAction      PunishmentType @default(MUTE)
+
+  // Relations
+  cases                 Case[]
+  warnings              Warning[]
+  tickets               Ticket[]
+  ticketCategories      TicketCategory[]
+  staffPermissions      StaffPermission[]
+  logEntries            LogEntry[]
+  verifications         Verification[]
+  scheduledTasks        ScheduledTask[]
+  reactionRoles         ReactionRole[]
+  autoRoles             AutoRole[]
+  staffActivity         StaffActivity[]
+  apiKeys               ApiKey[]
+
+  @@map("guilds")
+}
+
+// ========================
+// MODERATION — CASES
+// ========================
+model Case {
+  id            String         @id @default(cuid())
+  caseNumber    Int
+  guildId       String
+  guild         Guild          @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  type          PunishmentType
+  userId        String         // Discord user ID of punished
+  userTag       String
+  moderatorId   String         // Discord user ID of mod
+  moderatorTag  String
+  reason        String?
+  evidence      String[]       @default([]) // URLs/attachments
+  notes         String?        // internal mod notes
+  duration      Int?           // milliseconds (null = permanent)
+  active        Boolean        @default(true)
+  expiresAt     DateTime?
+  resolvedAt    DateTime?
+  resolvedBy    String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Appeal
+  appealStatus  AppealStatus   @default(NONE)
+  appealReason  String?
+  appealedAt    DateTime?
+  appealReviewer String?
+  appealNote    String?
+
+  @@unique([guildId, caseNumber])
+  @@index([guildId, userId])
+  @@index([guildId, moderatorId])
+  @@map("cases")
+}
+
+model Warning {
+  id          String   @id @default(cuid())
+  guildId     String
+  guild       Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  userId      String
+  userTag     String
+  moderatorId String
+  moderatorTag String
+  reason      String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime?
+
+  @@index([guildId, userId])
+  @@map("warnings")
+}
+
+// ========================
+// TICKETS
+// ========================
+model TicketCategory {
+  id            String   @id @default(cuid())
+  guildId       String
+  guild         Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  emoji         String?
+  label         String
+  departmentRoleId String?
+  autoClose     Int?     // minutes, 0 = disabled
+  priority      TicketPriority @default(NORMAL)
+  isActive      Boolean  @default(true)
+  position      Int      @default(0)
+  tickets       Ticket[]
+  createdAt     DateTime @default(now())
+
+  @@map("ticket_categories")
+}
+
+model Ticket {
+  id              String        @id @default(cuid())
+  ticketNumber    Int
+  guildId         String
+  guild           Guild         @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  categoryId      String
+  category        TicketCategory @relation(fields: [categoryId], references: [id])
+  channelId       String        @unique
+  creatorId       String        // Discord user ID
+  creatorTag      String
+  claimedBy       String?       // staff Discord ID
+  claimedByTag    String?
+  status          TicketStatus  @default(OPEN)
+  priority        TicketPriority @default(NORMAL)
+  subject         String?
+  internalNotes   String?
+  transcriptUrl   String?
+  satisfactionRating Int?       // 1-5
+  satisfactionComment String?
+  closedBy        String?
+  closedAt        DateTime?
+  autoCloseAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  participants    TicketParticipant[]
+  messages        TicketMessage[]
+  escalations     TicketEscalation[]
+
+  @@unique([guildId, ticketNumber])
+  @@index([guildId, creatorId])
+  @@index([guildId, status])
+  @@map("tickets")
+}
+
+model TicketParticipant {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userId    String
+  userTag   String
+  role      String   @default("user") // user | staff | viewer
+  joinedAt  DateTime @default(now())
+
+  @@unique([ticketId, userId])
+  @@map("ticket_participants")
+}
+
+model TicketMessage {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userId    String
+  userTag   String
+  content   String
+  isStaff   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@map("ticket_messages")
+}
+
+model TicketEscalation {
+  id          String   @id @default(cuid())
+  ticketId    String
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  escalatedBy String
+  reason      String
+  toRole      String
+  createdAt   DateTime @default(now())
+
+  @@map("ticket_escalations")
+}
+
+// ========================
+// LOGGING
+// ========================
+model LogEntry {
+  id          String      @id @default(cuid())
+  guildId     String
+  guild       Guild       @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  type        LogType
+  userId      String?
+  userTag     String?
+  targetId    String?
+  targetType  String?
+  description String
+  metadata    Json?
+  channelId   String?
+  messageId   String?
+  createdAt   DateTime    @default(now())
+
+  @@index([guildId, type])
+  @@index([guildId, createdAt])
+  @@map("log_entries")
+}
+
+// ========================
+// VERIFICATION
+// ========================
+model Verification {
+  id          String             @id @default(cuid())
+  guildId     String
+  guild       Guild              @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  userId      String
+  method      VerificationMethod
+  status      VerificationStatus @default(PENDING)
+  captchaCode String?
+  attempts    Int                @default(0)
+  verifiedAt  DateTime?
+  createdAt   DateTime           @default(now())
+  expiresAt   DateTime?
+
+  @@index([guildId, userId])
+  @@map("verifications")
+}
+
+// ========================
+// STAFF PERMISSIONS
+// ========================
+model StaffPermission {
+  id         String   @id @default(cuid())
+  guildId    String
+  guild      Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  roleId     String   // Discord role ID
+  roleName   String
+  department String?
+  permissions String[] @default([]) // array of permission keys
+  level      Int      @default(1)   // 1=mod, 2=sr.mod, 3=admin, 4=owner
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([guildId, roleId])
+  @@map("staff_permissions")
+}
+
+model StaffActivity {
+  id          String   @id @default(cuid())
+  guildId     String
+  guild       Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  userId      String
+  userTag     String
+  action      String
+  target      String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([guildId, userId])
+  @@index([guildId, createdAt])
+  @@map("staff_activity")
+}
+
+// ========================
+// SCHEDULED TASKS
+// ========================
+model ScheduledTask {
+  id         String    @id @default(cuid())
+  guildId    String
+  guild      Guild     @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  type       TaskType
+  data       Json
+  executeAt  DateTime
+  executed   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+
+  @@index([executeAt, executed])
+  @@map("scheduled_tasks")
+}
+
+// ========================
+// REACTION ROLES
+// ========================
+model ReactionRole {
+  id          String   @id @default(cuid())
+  guildId     String
+  guild       Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  channelId   String
+  messageId   String
+  emoji       String
+  roleId      String
+  roleName    String
+  description String?
+  exclusive   Boolean  @default(false) // remove other reaction roles
+  createdAt   DateTime @default(now())
+
+  @@unique([messageId, emoji])
+  @@map("reaction_roles")
+}
+
+// ========================
+// AUTO ROLES
+// ========================
+model AutoRole {
+  id        String   @id @default(cuid())
+  guildId   String
+  guild     Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  roleId    String
+  roleName  String
+  delay     Int      @default(0) // seconds
+  onJoin    Boolean  @default(true)
+  onVerify  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([guildId, roleId])
+  @@map("auto_roles")
+}
+
+// ========================
+// API KEYS
+// ========================
+model ApiKey {
+  id          String   @id @default(cuid())
+  guildId     String
+  guild       Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  name        String
+  keyHash     String   @unique // hashed
+  keyPrefix   String   // first 8 chars for display
+  permissions String[] @default([])
+  userId      String   // Discord ID of creator
+  lastUsedAt  DateTime?
+  usageCount  Int      @default(0)
+  isActive    Boolean  @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([guildId])
+  @@map("api_keys")
+}
+
+// ========================
+// ANALYTICS
+// ========================
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  guildId   String
+  type      String
+  userId    String?
+  data      Json?
+  date      DateTime @default(now())
+
+  @@index([guildId, type, date])
+  @@map("analytics_events")
+}
+
+model DailyStats {
+  id              String   @id @default(cuid())
+  guildId         String
+  date            DateTime @db.Date
+  joins           Int      @default(0)
+  leaves          Int      @default(0)
+  messages        Int      @default(0)
+  punishments     Int      @default(0)
+  ticketsOpened   Int      @default(0)
+  ticketsClosed   Int      @default(0)
+  verifications   Int      @default(0)
+
+  @@unique([guildId, date])
+  @@map("daily_stats")
+}
+
+// ========================
+// DASHBOARD SESSIONS
+// ========================
+model DashboardSession {
+  id        String   @id @default(cuid())
+  userId    String   // Discord user ID
+  guildId   String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  active    Boolean  @default(true)
+
+  @@index([userId])
+  @@map("dashboard_sessions")
+}
+
+// ========================
+// ENUMS
+// ========================
+enum PunishmentType {
+  WARN
+  MUTE
+  KICK
+  BAN
+  SOFTBAN
+  UNBAN
+  TIMEOUT
+  NOTE
+  VOICE_MUTE
+  VOICE_KICK
+  VOICE_MOVE
+  NICK_CHANGE
+  ROLE_ADD
+  ROLE_REMOVE
+}
+
+enum AppealStatus {
+  NONE
+  PENDING
+  APPROVED
+  DENIED
+}
+
+enum TicketStatus {
+  OPEN
+  CLAIMED
+  PENDING
+  RESOLVED
+  CLOSED
+  DELETED
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum LogType {
+  MESSAGE_DELETE
+  MESSAGE_EDIT
+  MESSAGE_BULK_DELETE
+  MEMBER_JOIN
+  MEMBER_LEAVE
+  MEMBER_BAN
+  MEMBER_UNBAN
+  MEMBER_KICK
+  MEMBER_MUTE
+  MEMBER_WARN
+  MEMBER_TIMEOUT
+  MEMBER_ROLE_ADD
+  MEMBER_ROLE_REMOVE
+  MEMBER_NICK_CHANGE
+  VOICE_JOIN
+  VOICE_LEAVE
+  VOICE_MOVE
+  VOICE_MUTE
+  VOICE_DEAFEN
+  CHANNEL_CREATE
+  CHANNEL_DELETE
+  CHANNEL_UPDATE
+  ROLE_CREATE
+  ROLE_DELETE
+  ROLE_UPDATE
+  INVITE_CREATE
+  INVITE_DELETE
+  BOOST
+  VERIFICATION
+  TICKET_OPEN
+  TICKET_CLOSE
+  TICKET_CLAIM
+  DASHBOARD_ACTION
+  API_REQUEST
+  AUTOMOD_ACTION
+  RAID_DETECTED
+  ALT_DETECTED
+}
+
+enum VerificationMethod {
+  BUTTON
+  CAPTCHA
+  ROLE
+  OAUTH
+  EMAIL
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
+  EXPIRED
+}
+
+enum TaskType {
+  UNBAN
+  UNMUTE
+  REMINDER
+  ANNOUNCEMENT
+  ROLE_ASSIGN
+  ROLE_REMOVE
+  TICKET_CLOSE
+}

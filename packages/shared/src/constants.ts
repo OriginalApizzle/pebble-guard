@@ -1,0 +1,86 @@
+export const COLORS = {
+  SUCCESS: 0x2ecc71,
+  ERROR: 0xe74c3c,
+  WARNING: 0xf39c12,
+  INFO: 0x3498db,
+  MODERATION: 0xe67e22,
+  LOG: 0x95a5a6,
+  TICKET: 0x9b59b6,
+  VERIFICATION: 0x1abc9c,
+} as const;
+
+export const EMOJIS = {
+  SUCCESS: '✅',
+  ERROR: '❌',
+  WARNING: '⚠️',
+  INFO: 'ℹ️',
+  LOADING: '⏳',
+  LOCK: '🔒',
+  UNLOCK: '🔓',
+  TICKET: '🎫',
+  SHIELD: '🛡️',
+  BAN: '🔨',
+  KICK: '👢',
+  MUTE: '🔇',
+  WARN: '⚠️',
+  TIMEOUT: '⏰',
+  STAR: '⭐',
+  ANALYTICS: '📊',
+  SETTINGS: '⚙️',
+  LOG: '📋',
+} as const;
+
+export const LIMITS = {
+  REASON_MAX: 512,
+  NOTE_MAX: 1024,
+  TICKET_SUBJECT_MAX: 100,
+  API_KEY_NAME_MAX: 64,
+  WORD_BLACKLIST_MAX: 200,
+  REACTION_ROLES_MAX: 50,
+  TICKET_CATEGORIES_MAX: 25,
+  STAFF_ROLES_MAX: 50,
+  WARN_REASON_MAX: 512,
+} as const;
+
+export const TIMEOUTS = {
+  BUTTON_INTERACTION: 60_000,
+  MODAL_RESPONSE: 300_000,
+  TICKET_AUTO_CLOSE: 72 * 60 * 60 * 1000, // 72 hours
+  VERIFICATION_EXPIRY: 10 * 60 * 1000,     // 10 minutes
+  CAPTCHA_EXPIRY: 5 * 60 * 1000,           // 5 minutes
+  CACHE_TTL: 5 * 60,                        // 5 minutes (seconds)
+} as const;
+
+export const PERMISSIONS = {
+  // Staff levels
+  STAFF: 'STAFF',
+  MOD: 'MOD',
+  SR_MOD: 'SR_MOD',
+  ADMIN: 'ADMIN',
+  OWNER: 'OWNER',
+
+  // Module permissions
+  VIEW_CASES: 'VIEW_CASES',
+  CREATE_CASE: 'CREATE_CASE',
+  DELETE_CASE: 'DELETE_CASE',
+  MANAGE_CASES: 'MANAGE_CASES',
+
+  VIEW_TICKETS: 'VIEW_TICKETS',
+  CLAIM_TICKET: 'CLAIM_TICKET',
+  CLOSE_TICKET: 'CLOSE_TICKET',
+  MANAGE_TICKETS: 'MANAGE_TICKETS',
+
+  VIEW_LOGS: 'VIEW_LOGS',
+  EXPORT_LOGS: 'EXPORT_LOGS',
+
+  VIEW_ANALYTICS: 'VIEW_ANALYTICS',
+
+  MANAGE_GUILD: 'MANAGE_GUILD',
+  MANAGE_STAFF: 'MANAGE_STAFF',
+  MANAGE_AUTOMOD: 'MANAGE_AUTOMOD',
+  MANAGE_VERIFICATION: 'MANAGE_VERIFICATION',
+  MANAGE_TICKETS_CONFIG: 'MANAGE_TICKETS_CONFIG',
+
+  VIEW_API_KEYS: 'VIEW_API_KEYS',
+  MANAGE_API_KEYS: 'MANAGE_API_KEYS',
+} as const;
