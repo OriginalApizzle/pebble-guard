@@ -17,7 +17,12 @@
     "db:studio": "pnpm -F @pebble-guard/database studio",
     "format": "prettier --write \"**/*.{js,cjs,mjs,ts,tsx,md,json}\" --ignore-path .gitignore",
     "lint": "turbo lint",
-    "type-check": "turbo type-check"
+    "type-check": "turbo type-check",
+    "setup": "bash scripts/setup.sh",
+    "start:prod": "bash scripts/start-prod.sh",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
   },
   "devDependencies": {
     "@manypkg/cli": "^0.21.0",

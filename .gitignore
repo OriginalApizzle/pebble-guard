@@ -1,7 +1,6 @@
 # Dependencies
 node_modules/
-.pnp
-.pnp.js
+.pnpm-store/
 
 # Build outputs
 dist/
@@ -9,7 +8,7 @@ dist/
 out/
 build/
 
-# Env files
+# Environment
 .env
 .env.local
 .env.*.local
@@ -20,18 +19,27 @@ logs/
 npm-debug.log*
 pnpm-debug.log*
 
+# Runtime
+pids/
+*.pid
+*.seed
+
 # OS
 .DS_Store
 Thumbs.db
-
-# Prisma
-*.db
-*.db-journal
-
-# Turbo
-.turbo/
 
 # IDE
 .vscode/
 .idea/
 *.swp
+*.swo
+
+# Prisma
+packages/database/node_modules/
+
+# Turbo
+.turbo/
+
+# Test
+coverage/
+.nyc_output/

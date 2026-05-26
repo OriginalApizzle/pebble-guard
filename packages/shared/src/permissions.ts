@@ -1,14 +1,22 @@
-export const LEVEL_PERMISSIONS: Record<number, string[]> = {
-  1: ['STAFF', 'VIEW_CASES', 'CREATE_CASE', 'VIEW_TICKETS', 'CLAIM_TICKET', 'CLOSE_TICKET', 'VIEW_LOGS', 'VIEW_ANALYTICS'],
-  2: ['STAFF', 'MOD', 'VIEW_CASES', 'CREATE_CASE', 'DELETE_CASE', 'MANAGE_CASES', 'VIEW_TICKETS', 'CLAIM_TICKET', 'CLOSE_TICKET', 'MANAGE_TICKETS', 'VIEW_LOGS', 'EXPORT_LOGS', 'VIEW_ANALYTICS'],
-  3: ['STAFF', 'MOD', 'SR_MOD', 'ADMIN', 'VIEW_CASES', 'CREATE_CASE', 'DELETE_CASE', 'MANAGE_CASES', 'VIEW_TICKETS', 'CLAIM_TICKET', 'CLOSE_TICKET', 'MANAGE_TICKETS', 'MANAGE_TICKETS_CONFIG', 'VIEW_LOGS', 'EXPORT_LOGS', 'VIEW_ANALYTICS', 'MANAGE_GUILD', 'MANAGE_STAFF', 'MANAGE_AUTOMOD', 'MANAGE_VERIFICATION'],
-  4: ['STAFF', 'MOD', 'SR_MOD', 'ADMIN', 'OWNER', 'VIEW_CASES', 'CREATE_CASE', 'DELETE_CASE', 'MANAGE_CASES', 'VIEW_TICKETS', 'CLAIM_TICKET', 'CLOSE_TICKET', 'MANAGE_TICKETS', 'MANAGE_TICKETS_CONFIG', 'VIEW_LOGS', 'EXPORT_LOGS', 'VIEW_ANALYTICS', 'MANAGE_GUILD', 'MANAGE_STAFF', 'MANAGE_AUTOMOD', 'MANAGE_VERIFICATION', 'VIEW_API_KEYS', 'MANAGE_API_KEYS'],
-};
+export const STAFF_LEVELS = {
+  STAFF: 1,
+  MODERATOR: 2,
+  SENIOR_MOD: 3,
+  ADMIN: 4,
+} as const;
 
-export function hasPermission(userPermissions: string[], required: string): boolean {
-  return userPermissions.includes(required) || userPermissions.includes('OWNER');
+export type StaffLevel = typeof STAFF_LEVELS[keyof typeof STAFF_LEVELS];
+
+export function hasPermission(userLevel: number, required: number): boolean {
+  return userLevel >= required;
 }
 
-export function getPermissionsForLevel(level: number): string[] {
-  return LEVEL_PERMISSIONS[level] || LEVEL_PERMISSIONS[1];
+export function getStaffLabel(level: number): string {
+  switch (level) {
+    case 1: return 'Staff';
+    case 2: return 'Moderator';
+    case 3: return 'Senior Mod / Admin';
+    case 4: return 'Owner';
+    default: return 'Unknown';
+  }
 }
